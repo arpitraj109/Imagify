@@ -3,67 +3,169 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import razorpay from 'razorpay';
 import transactionModel from '../model/transactionModel.js';
+import nodemailer from 'nodemailer';
 
-const registerUser=async(req,res)=>{
-    try{
-        const {name,email,password}=req.body
+// Create a transporter for sending emails
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
-        if(!name || !email || !password)
-        {
-            return res.json({success:false, message:'Missing Details'})
+// Function to generate OTP
+const generateOTP = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Function to send OTP
+const sendOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await userModel.findOne({ email });
+
+        if (!user) {
+            return res.json({ success: false, message: 'User not found' });
         }
-        const salt=await bcrypt.genSalt(10)
-        const hashedPassword=await bcrypt.hash(password,salt)
 
-        const userData={
+        const otp = generateOTP();
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // OTP valid for 10 minutes
+
+        await userModel.findByIdAndUpdate(user._id, {
+            otp,
+            otpExpiry
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Your OTP for ImageT Verification',
+            text: `Your OTP for verification is: ${otp}. This OTP will expire in 10 minutes.`
+        };
+
+        await transporter.sendMail(mailOptions);
+        res.json({ success: true, message: 'OTP sent successfully' });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Function to verify OTP
+const verifyOTP = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        const user = await userModel.findOne({ email });
+
+        if (!user) {
+            return res.json({ success: false, message: 'User not found' });
+        }
+
+        if (user.otp !== otp) {
+            return res.json({ success: false, message: 'Invalid OTP' });
+        }
+
+        if (user.otpExpiry < new Date()) {
+            return res.json({ success: false, message: 'OTP has expired' });
+        }
+
+        await userModel.findByIdAndUpdate(user._id, {
+            isVerified: true,
+            otp: null,
+            otpExpiry: null
+        });
+
+        res.json({ success: true, message: 'OTP verified successfully' });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+const registerUser = async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+
+        if (!name || !email || !password) {
+            return res.json({ success: false, message: 'Missing Details' });
+        }
+
+        const existingUser = await userModel.findOne({ email });
+        if (existingUser) {
+            return res.json({ success: false, message: 'Email already registered' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const userData = {
             name,
             email,
-            password:hashedPassword
+            password: hashedPassword,
+            isVerified: false
+        };
+
+        const newUser = new userModel(userData);
+        const user = await newUser.save();
+
+        // Send OTP after registration
+        const otp = generateOTP();
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+        await userModel.findByIdAndUpdate(user._id, {
+            otp,
+            otpExpiry
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Your OTP for ImageT Verification',
+            text: `Your OTP for verification is: ${otp}. This OTP will expire in 10 minutes.`
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.json({ 
+            success: true, 
+            message: 'Registration successful. Please verify your email with the OTP sent.',
+            user: { name: user.name, email: user.email }
+        });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+const loginUser = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await userModel.findOne({ email });
+
+        if (!user) {
+            return res.json({ success: false, message: 'User does not exist' });
         }
 
-        const newUser=new userModel(userData)
+        const isMatch = await bcrypt.compare(password, user.password);
 
-        const user=await newUser.save()
-
-        const token=jwt.sign({id:user._id}, process.env.JWT_SECRET)
-
-        res.json({success: true,token,user:{name:user.name}})
-    }
-    catch(error)
-    {
-        console.log(error)
-        res.json({success:false,message:error.message})
-    }
-}
-
-const loginUser=async(req,res)=>{
-    try{
-        const {email,password}=req.body;
-        const user=await userModel.findOne({email})
-
-        if(!user)
-        {
-            return res.json({success:false,message:'User does not exist'})
-
+        if (isMatch) {
+            if (!user.isVerified) {
+                return res.json({ 
+                    success: false, 
+                    message: 'Please verify your email first. Check your inbox for the OTP.' 
+                });
+            }
+            const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+            res.json({ success: true, token, user: { name: user.name } });
+        } else {
+            return res.json({ success: false, message: 'Invalid Password' });
         }
-        const isMatch=await bcrypt.compare(password,user.password)
-
-        if(isMatch)
-        {
-            const token=jwt.sign({id:user._id},process.env.JWT_SECRET)
-            res.json({success:true,token,user:{name:user.name}})
-
-        }
-        else{
-            return res.json({success:false,message:'Invalid Password'})
-        }
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
     }
-    catch(error)
-    {
-        console.log(error)
-        res.json({success:false,message:error.message})
-    }
-}
+};
 
 const userCredits=async(req,res)=>{
     try{
@@ -181,4 +283,4 @@ const paymentRazorpay = async (req, res) => {
 
 };
 
-export {registerUser,loginUser,userCredits,paymentRazorpay,verifyRazorpay}
+export {registerUser,loginUser,userCredits,paymentRazorpay,verifyRazorpay,sendOTP,verifyOTP}
