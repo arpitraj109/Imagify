@@ -1,15 +1,17 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { assets } from '../assets/assets';
 import { AppContext } from '../context/Appcontext';
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import OTPVerification from './OTPVerification';
+import ForgotPassword from './ForgotPassword';
 
 const Login = () => {
   const [state, setState] = useState('Login');
   const { setShowLogin, backendUrl, setToken, setUser } = useContext(AppContext);
   const [showOTP, setShowOTP] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
 
   const [name, setName] = useState('');
@@ -111,7 +113,14 @@ const Login = () => {
             />
           </div>
 
-          <p className='text-sm text-blue-600 my-4 cursor-pointer'>Forgot Password</p>
+          {state === 'Login' && (
+            <p 
+              className='text-sm text-blue-600 my-4 cursor-pointer'
+              onClick={() => setShowForgotPassword(true)}
+            >
+              Forgot Password?
+            </p>
+          )}
 
           <button className='bg-blue-600 w-full text-white py-2 rounded-full'>
             {state === 'Login' ? 'Login' : 'Create Account'}
@@ -148,6 +157,10 @@ const Login = () => {
           onVerificationComplete={handleVerificationComplete}
           onClose={() => setShowOTP(false)}
         />
+      )}
+
+      {showForgotPassword && (
+        <ForgotPassword onClose={() => setShowForgotPassword(false)} />
       )}
     </>
   );

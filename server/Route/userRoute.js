@@ -7,7 +7,9 @@ import {
     paymentRazorpay, 
     verifyRazorpay,
     sendOTP,
-    verifyOTP 
+    verifyOTP,
+    forgotPassword,
+    resetPassword
 } from '../controller/userController.js'
 import userAuth from '../Middleware/auth.js'
 
@@ -20,6 +22,8 @@ userRouter.post('/pay-razor', userAuth, paymentRazorpay)
 userRouter.post('/verify-razor', verifyRazorpay)
 userRouter.post('/send-otp', sendOTP)
 userRouter.post('/verify-otp', verifyOTP)
+userRouter.post('/forgot-password', forgotPassword)
+userRouter.post('/reset-password', resetPassword)
 
 export default userRouter;
 

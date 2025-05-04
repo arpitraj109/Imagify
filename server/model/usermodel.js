@@ -7,7 +7,9 @@ const userSchema=new mongoose.Schema({
     creditBalance:{type:Number, default:5},
     otp: {type: String},
     otpExpiry: {type: Date},
-    isVerified: {type: Boolean, default: false}
+    isVerified: {type: Boolean, default: false},
+    passwordResetToken: {type: String},
+    passwordResetExpiry: {type: Date}
 })
 
 const userModel=mongoose.models.user || mongoose.model("user",userSchema)

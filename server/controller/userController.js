@@ -283,4 +283,82 @@ const paymentRazorpay = async (req, res) => {
 
 };
 
-export {registerUser,loginUser,userCredits,paymentRazorpay,verifyRazorpay,sendOTP,verifyOTP}
+// Function to handle forgot password request
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await userModel.findOne({ email });
+
+        if (!user) {
+            return res.json({ success: false, message: 'User not found' });
+        }
+
+        // Generate reset token
+        const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+        const resetExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+        await userModel.findByIdAndUpdate(user._id, {
+            passwordResetToken: resetToken,
+            passwordResetExpiry: resetExpiry
+        });
+
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Password Reset Request - ImageT',
+            html: `
+                <h2>Password Reset Request</h2>
+                <p>You requested to reset your password. Click the link below to reset it:</p>
+                <a href="${resetLink}" style="display: inline-block; padding: 10px 20px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a>
+                <p>This link will expire in 15 minutes.</p>
+                <p>If you didn't request this, please ignore this email.</p>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        res.json({ success: true, message: 'Password reset link sent to your email' });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Function to reset password
+const resetPassword = async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+
+        if (!token || !newPassword) {
+            return res.json({ success: false, message: 'Missing required fields' });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await userModel.findOne({
+            _id: decoded.id,
+            passwordResetToken: token,
+            passwordResetExpiry: { $gt: new Date() }
+        });
+
+        if (!user) {
+            return res.json({ success: false, message: 'Invalid or expired reset token' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        await userModel.findByIdAndUpdate(user._id, {
+            password: hashedPassword,
+            passwordResetToken: null,
+            passwordResetExpiry: null
+        });
+
+        res.json({ success: true, message: 'Password reset successful' });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+export {registerUser,loginUser,userCredits,paymentRazorpay,verifyRazorpay,sendOTP,verifyOTP,forgotPassword,resetPassword}
