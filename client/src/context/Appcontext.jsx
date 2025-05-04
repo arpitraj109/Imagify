@@ -13,13 +13,13 @@ const AppContextProvider = ({ children }) => {
     const [token,setToken]=useState(localStorage.getItem('token'))
 
     const [credit,setCredit]=useState(false)
-    const backendUrl=import.meta.env.VITE_BACKEND_URL
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://imagify-v05b.onrender.com'
 
     const navigate=useNavigate()
 
     const loadCreditData=async()=>{
         try{
-            const {data}=await axios.get(backendUrl + '/api/user/credits',{headers:{token}})
+            const {data}=await axios.get(`${backendUrl}/api/user/credits`,{headers:{token}})
 
             if(data.success)
             {

@@ -9,10 +9,11 @@ const PORT=process.env.PORT || 4000;
 
 const app=express()
 
-
-
 app.use(express.json())
-app.use(cors())
+app.use(cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true
+}))
 await connectDB()
 
 app.use('/api/user',userRouter)
@@ -20,4 +21,6 @@ app.use('/api/image',imageRouter)
 
 app.get('/',(req,res)=>res.send("API Working fine"))
 
-app.listen(PORT,()=>console.log("Server running on port " +PORT));
+app.listen(PORT,()=>{
+    console.log(`Server is running on port ${PORT}`)
+})
