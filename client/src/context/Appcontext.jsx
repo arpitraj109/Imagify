@@ -13,7 +13,9 @@ const AppContextProvider = ({ children }) => {
     const [token,setToken]=useState(localStorage.getItem('token'))
 
     const [credit,setCredit]=useState(false)
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://imagify-v05b.onrender.com'
+    
+    // Use the deployed backend URL
+    const backendUrl = 'https://imagify-tvmr.onrender.com'
 
     const navigate=useNavigate()
 

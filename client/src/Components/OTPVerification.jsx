@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 const OTPVerification = ({ email, onVerificationComplete, onClose }) => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(600); // 10 minutes in seconds
-  const [backendUrl] = useState(import.meta.env.VITE_BACKEND_URL);
+  const backendUrl = 'http://localhost:4000';
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -42,7 +42,7 @@ const OTPVerification = ({ email, onVerificationComplete, onClose }) => {
 
   const handleResendOTP = async () => {
     try {
-      const { data } = await axios.post(backendUrl + '/api/user/send-otp', { email });
+      const { data } = await axios.post(`${backendUrl}/api/user/send-otp`, { email });
       if (data.success) {
         setTimer(600);
         toast.success('OTP sent successfully');
@@ -64,7 +64,7 @@ const OTPVerification = ({ email, onVerificationComplete, onClose }) => {
     }
 
     try {
-      const { data } = await axios.post(backendUrl + '/api/user/verify-otp', {
+      const { data } = await axios.post(`${backendUrl}/api/user/verify-otp`, {
         email,
         otp: otpString
       });
@@ -116,34 +116,34 @@ const OTPVerification = ({ email, onVerificationComplete, onClose }) => {
         </div>
 
         <div className='text-center mt-4'>
-          <p className='text-sm'>
+          <p className='text-sm text-gray-500'>
             Time remaining: {formatTime(timer)}
           </p>
-          {timer === 0 && (
-            <button
-              type='button'
-              onClick={handleResendOTP}
-              className='text-blue-600 text-sm mt-2'
-            >
-              Resend OTP
-            </button>
-          )}
+          <button
+            type='button'
+            onClick={handleResendOTP}
+            disabled={timer > 0}
+            className={`text-sm mt-2 ${
+              timer > 0 ? 'text-gray-400' : 'text-blue-600 hover:underline'
+            }`}
+          >
+            Resend OTP
+          </button>
         </div>
 
         <button
           type='submit'
-          className='bg-blue-600 w-full text-white py-2 rounded-full mt-6'
+          className='w-full bg-blue-600 text-white py-2 rounded-full mt-6'
         >
-          Verify OTP
+          Verify
         </button>
 
-        <button
-          type='button'
+        <img
           onClick={onClose}
-          className='absolute top-5 right-5 text-gray-500 hover:text-gray-700'
-        >
-          ✕
-        </button>
+          src={assets.cross_icon}
+          alt="Close Icon"
+          className='absolute top-5 right-5 cursor-pointer'
+        />
       </motion.form>
     </div>
   );

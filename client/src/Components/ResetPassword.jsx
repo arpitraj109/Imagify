@@ -11,7 +11,7 @@ const ResetPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = 'http://localhost:4000';
   const token = searchParams.get('token');
 
   useEffect(() => {
@@ -32,7 +32,7 @@ const ResetPassword = () => {
     setIsLoading(true);
 
     try {
-      const { data } = await axios.post(backendUrl + '/api/user/reset-password', {
+      const { data } = await axios.post(`${backendUrl}/api/user/reset-password`, {
         token,
         newPassword
       });
@@ -51,7 +51,7 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className='min-h-screen flex items-center justify-center bg-gradient-to-b from-teal-50 to-orange-50'>
+    <div className='min-h-screen flex items-center justify-center px-4'>
       <motion.form
         onSubmit={handleSubmit}
         initial={{ opacity: 0.2, y: 50 }}
@@ -82,14 +82,15 @@ const ResetPassword = () => {
             value={confirmPassword}
             type='password'
             className='outline-none text-sm w-full'
-            placeholder='Confirm New Password'
+            placeholder='Confirm Password'
             required
           />
         </div>
 
-        <button 
-          className='bg-blue-600 w-full text-white py-2 rounded-full mt-6 disabled:opacity-50'
+        <button
+          type='submit'
           disabled={isLoading}
+          className='w-full bg-blue-600 text-white py-2 rounded-full mt-6 disabled:bg-blue-400'
         >
           {isLoading ? 'Resetting...' : 'Reset Password'}
         </button>

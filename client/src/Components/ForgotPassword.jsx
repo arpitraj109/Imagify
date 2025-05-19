@@ -7,14 +7,14 @@ import { assets } from '../assets/assets';
 const ForgotPassword = ({ onClose }) => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = 'http://localhost:4000';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const { data } = await axios.post(backendUrl + '/api/user/forgot-password', { email });
+      const { data } = await axios.post(`${backendUrl}/api/user/forgot-password`, { email });
       if (data.success) {
         toast.success(data.message);
         onClose();
@@ -53,9 +53,10 @@ const ForgotPassword = ({ onClose }) => {
           />
         </div>
 
-        <button 
-          className='bg-blue-600 w-full text-white py-2 rounded-full mt-6 disabled:opacity-50'
+        <button
+          type='submit'
           disabled={isLoading}
+          className='w-full bg-blue-600 text-white py-2 rounded-full mt-6 disabled:bg-blue-400'
         >
           {isLoading ? 'Sending...' : 'Send Reset Link'}
         </button>
