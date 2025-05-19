@@ -9,7 +9,8 @@ const userSchema=new mongoose.Schema({
     otpExpiry: {type: Date},
     isVerified: {type: Boolean, default: false},
     passwordResetToken: {type: String},
-    passwordResetExpiry: {type: Date}
+    passwordResetExpiry: {type: Date},
+    isAdmin: { type: Boolean, default: false }
 })
 
 const userModel=mongoose.models.user || mongoose.model("user",userSchema)

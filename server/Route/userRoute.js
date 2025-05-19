@@ -9,7 +9,8 @@ import {
     sendOTP,
     verifyOTP,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    createAdminUser
 } from '../controller/userController.js'
 import userAuth from '../Middleware/auth.js'
 
@@ -24,6 +25,7 @@ userRouter.post('/send-otp', sendOTP)
 userRouter.post('/verify-otp', verifyOTP)
 userRouter.post('/forgot-password', forgotPassword)
 userRouter.post('/reset-password', resetPassword)
+userRouter.post('/create-admin', createAdminUser)
 
 export default userRouter;
 

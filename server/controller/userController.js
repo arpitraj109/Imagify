@@ -361,4 +361,55 @@ const resetPassword = async (req, res) => {
     }
 };
 
-export {registerUser,loginUser,userCredits,paymentRazorpay,verifyRazorpay,sendOTP,verifyOTP,forgotPassword,resetPassword}
+// Function to create admin user
+const createAdminUser = async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+
+        if (!name || !email || !password) {
+            return res.json({ success: false, message: 'Missing Details' });
+        }
+
+        const existingUser = await userModel.findOne({ email });
+        if (existingUser) {
+            return res.json({ success: false, message: 'Email already registered' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const userData = {
+            name,
+            email,
+            password: hashedPassword,
+            isVerified: true,
+            isAdmin: true,
+            creditBalance: 999999 // Set a very high credit balance
+        };
+
+        const newUser = new userModel(userData);
+        const user = await newUser.save();
+
+        res.json({ 
+            success: true, 
+            message: 'Admin user created successfully',
+            user: { name: user.name, email: user.email }
+        });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+export {
+    registerUser,
+    loginUser,
+    userCredits,
+    paymentRazorpay,
+    verifyRazorpay,
+    sendOTP,
+    verifyOTP,
+    forgotPassword,
+    resetPassword,
+    createAdminUser
+}

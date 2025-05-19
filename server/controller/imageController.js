@@ -1,41 +1,51 @@
-import userModel from"../model/usermodel.js"
+import userModel from "../model/usermodel.js"
 import FormData from 'form-data'
 import axios from 'axios'
-export const generateImage=async(req,res)=>{
-    try{
 
-        const {userId,prompt}=req.body
+export const generateImage = async (req, res) => {
+    try {
+        const { userId, prompt } = req.body
 
-        const user=await userModel.findById(userId)
+        const user = await userModel.findById(userId)
 
-        if(!user || !prompt)
-        {
-            return res.json({success:false,message:'Missing Details'})
+        if (!user || !prompt) {
+            return res.json({ success: false, message: 'Missing Details' })
         }
-        if(user.creditBalance===0 || userModel.creditBalance<0)
-        {
-            return res.json({success:false,message:'No Credit Balance', creditBalance:user.creditBalance})
+
+        // Skip credit check for admin users
+        if (!user.isAdmin) {
+            if (user.creditBalance === 0 || user.creditBalance < 0) {
+                return res.json({ success: false, message: 'No Credit Balance', creditBalance: user.creditBalance })
+            }
         }
-        const formData=new FormData()
-        formData.append('prompt',prompt)
-        
-        const {data}= await axios.post('https://clipdrop-api.co/text-to-image/v1',formData,{
+
+        const formData = new FormData()
+        formData.append('prompt', prompt)
+
+        const { data } = await axios.post('https://clipdrop-api.co/text-to-image/v1', formData, {
             headers: {
                 'x-api-key': process.env.CLIPDROP_API,
-              },
-              responseType:'arraybuffer'
+            },
+            responseType: 'arraybuffer'
         })
 
-        const base64Image=Buffer.from(data,'binary').toString('base64')
-        const resultImage=`data:image/png;base64,${base64Image}`
+        const base64Image = Buffer.from(data, 'binary').toString('base64')
+        const resultImage = `data:image/png;base64,${base64Image}`
 
-        await userModel.findByIdAndUpdate(user._id, { $inc: { creditBalance: -1 } });
+        // Only deduct credits for non-admin users
+        if (!user.isAdmin) {
+            await userModel.findByIdAndUpdate(user._id, { $inc: { creditBalance: -1 } });
+        }
 
-        res.json({success:true,message:"Image Generated",creditBalance:user.creditBalance--,resultImage})
+        res.json({ 
+            success: true, 
+            message: "Image Generated", 
+            creditBalance: user.isAdmin ? 'Unlimited' : user.creditBalance - 1, 
+            resultImage 
+        })
 
-    }catch(error)
-    {
+    } catch (error) {
         console.log(error.message)
-        res.json({success:false,message:error.message})
+        res.json({ success: false, message: error.message })
     }
 }

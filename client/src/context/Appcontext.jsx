@@ -14,8 +14,8 @@ const AppContextProvider = ({ children }) => {
 
     const [credit,setCredit]=useState(false)
     
-    // Use the deployed backend URL
-    const backendUrl = 'https://imagify-tvmr.onrender.com'
+    // Use local backend URL
+    const backendUrl = 'http://localhost:4000'
 
     const navigate=useNavigate()
 
