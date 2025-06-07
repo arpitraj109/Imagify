@@ -138,7 +138,5 @@ npm run dev
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Contact
-
-Your Name - arpitraj109@gmail.com
-
-Project Link: https://github.com/arpitraj109/Imagify
+arpitraj109@gmail.com
+https://github.com/arpitraj109/Imagify
